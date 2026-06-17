@@ -119,6 +119,21 @@ Drop a file in `agent/integrations/` and add a `[integrations.<name>]` block in 
 - [ ] GitHub integration - PR diffs and CI failures as session context
 - [ ] Confluence / Notion - pull relevant docs into context automatically
 
+## Related projects
+
+Plain-text and local-file knowledge systems that share the same storage philosophy as sboard:
+
+- [DokuWiki](https://www.dokuwiki.org) - the classic (2004). PHP wiki on flat `.txt` files, no database, still actively maintained. The reference point for filesystem-native team wikis.
+- [Obsidian](https://obsidian.md) - local vault of `.md` files, rich linking, no cloud required. Proprietary but free for personal use.
+- [Logseq](https://logseq.com) - open source outliner on local markdown files, knowledge graph, daily notes.
+- [Foam](https://foambubble.github.io/foam/) - VS Code extension that adds bidirectional links to any existing markdown folder.
+- [TiddlyWiki](https://tiddlywiki.com) - entire wiki in a single HTML file, runs in browser, no server.
+- [MkDocs](https://www.mkdocs.org) - renders a folder of markdown into a browsable static site, one YAML config, no database.
+- [Markopolis](https://pypi.org/project/markopolis/) - open source self-hostable web app, point it at a directory of `.md` files, serves with full-text search.
+- [WikidPad](https://wikidpad.sourceforge.net) - desktop wiki notebook (2003), all data local, cross-linked plain text files.
+- [PmWiki](https://www.pmwiki.org) - flat-file PHP wiki with a [documented rationale](https://www.pmwiki.org/wiki/PmWiki/FlatFileAdvantages) for avoiding databases.
+- [Google Open Knowledge Format](https://flowtivity.ai/blog/google-open-knowledge-format/) - open spec (June 2026) for storing organizational knowledge as markdown files with YAML frontmatter, designed for AI agent access.
+
 ## License
 
 MIT
