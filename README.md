@@ -239,6 +239,41 @@ slow_query_threshold_ms = 1000
 watch_locks = true
 ```
 
+### GitHub / GitLab
+
+- **Blame and history** - when a file path or function name appears in conversation, agent runs `git blame` and surfaces the last author, commit message, and PR/MR link
+- **PR/MR context** - recent merges to the affected service are injected at session start; agent flags any merge in the 24h before the incident
+- **CI pipeline status** - pipeline results for the affected service are streamed into the transcript as they complete
+- **Write: unit test generation** - agent can generate a failing unit test that reproduces the bug described in the conversation and open a draft PR/MR with it
+- **Write: CI trigger** - agent can push a branch and trigger a pipeline run directly from the session; result is appended to the transcript when complete
+
+```toml
+[integrations.github]
+enabled = true
+token = "ghp_..."               # or $GITHUB_TOKEN
+repos = ["org/api", "org/worker"]
+watch_ci = true
+write_back = false              # set true to allow test generation and CI triggers
+
+[integrations.gitlab]
+enabled = false
+url = "https://gitlab.your-org.com"
+token = "glpat-..."             # or $GITLAB_TOKEN
+projects = ["org/api", "org/worker"]
+watch_pipelines = true
+write_back = false
+```
+
+**Unit test + CI flow**
+
+When the agent identifies a reproducible failure path from the logs and conversation:
+
+1. Agent generates a minimal unit test targeting the failing code path
+2. Appends the test to `ai_responses.md` for participant review
+3. If `write_back = true` and a participant approves (reacts with `+1` in Slack), agent opens a draft PR/MR with the test
+4. CI pipeline triggers automatically; results stream back into the session transcript
+5. Pass/fail is noted in `postmortem_draft.md` as a validation step
+
 ### Adding your own
 
 Integrations implement a two-method interface:
