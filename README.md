@@ -84,6 +84,28 @@ As content arrives the agent scans continuously:
 All annotations are appended to `ai_responses.md` with timestamps, visible to
 anyone watching the session.
 
+**4a. Log correlation**
+
+The agent actively fetches logs from configured backends and cross-references
+them against what participants are saying:
+
+- Someone says "payment service is throwing 500s" - agent queries Loki or
+  Elastic for `service=payment level=error` in the last 30 minutes, pulls the
+  top error patterns, and injects a summary with log line counts and first/last
+  occurrence times
+- An error string appears in Slack - agent searches all log backends for that
+  exact string, reports which pods/hosts it appeared on and how frequently
+- Someone pastes a request ID or trace ID - agent fetches the full trace from
+  the log store and reconstructs the request path across services
+- Log volume spike detected independently - agent surfaces it proactively
+  without being asked, timestamped against the incident timeline
+- Postgres slow query log shows a query taking 30s - agent links it back to
+  the service and endpoint mentioned 2 minutes earlier in the Slack thread
+
+The cross-reference works in both directions: Slack comment triggers a log
+fetch, and an anomaly in the logs triggers a Slack annotation. The merged
+view in `ai_responses.md` shows the conversation and the evidence side by side.
+
 **5. Participants interact via Slack as normal**
 
 Paste a log snippet, a config value, a URL - the agent cross-references it.
@@ -156,6 +178,65 @@ enabled = true
 api_key = "..."              # or $PD_API_KEY
 services = ["P1ABC23"]
 postmortem_on_resolve = true
+```
+
+### Kubernetes
+
+- **Pod log tail** - streams stdout/stderr from pods matching a label selector into the transcript
+- **Event watch** - k8s events (CrashLoopBackOff, OOMKilled, failed scheduling) are injected as structured entries
+- **Describe on demand** - when a pod name appears in conversation, agent runs `kubectl describe pod` and appends the output
+
+```toml
+[integrations.kubernetes]
+enabled = true
+kubeconfig = "~/.kube/config"   # or in-cluster service account
+namespaces = ["production", "payments"]
+label_selector = "app in (api, worker)"
+tail_lines = 200
+```
+
+### Loki
+
+- **LogQL query** - when a service name, error string, or time window is mentioned, agent constructs a LogQL query and fetches matching log lines
+- **Spike detection** - polls log volume for configured labels; injects an alert if error rate exceeds threshold
+- **Trace correlation** - extracts trace IDs from log lines and links them to spans if Tempo is also configured
+
+```toml
+[integrations.loki]
+enabled = true
+url = "http://loki:3100"
+default_labels = {env = "prod"}
+lookback_minutes = 30
+error_spike_threshold = 2.0     # ratio vs baseline to trigger proactive alert
+```
+
+### Elasticsearch / Kibana
+
+- **Full-text search** - agent searches the configured index pattern for error strings, request IDs, or trace IDs extracted from the conversation
+- **Aggregation queries** - "how many 500s in the last hour?" triggers an aggregation query; result is injected as a table
+- **Kibana link generation** - every log fetch appends a Kibana deep-link so participants can open the full context in one click
+
+```toml
+[integrations.elasticsearch]
+enabled = true
+url = "https://elastic:9200"
+api_key = "..."                 # or $ES_API_KEY
+index_pattern = "logs-*"
+kibana_url = "https://kibana:5601"
+```
+
+### Postgres
+
+- **Slow query log** - tails `pg_stat_statements` for queries exceeding a threshold; slow queries are injected with the query text, execution plan summary, and the calling service if identifiable
+- **Lock wait detection** - monitors `pg_locks` and `pg_stat_activity`; deadlocks and long waits are surfaced immediately
+- **Schema lookup** - when a table name appears in conversation, agent fetches column definitions and recent migration history
+
+```toml
+[integrations.postgres]
+enabled = true
+dsn = "postgresql://user:pass@host:5432/db"  # or $POSTGRES_DSN
+slow_query_threshold_ms = 1000
+watch_locks = true
 ```
 
 ### Adding your own
