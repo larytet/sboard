@@ -47,12 +47,77 @@ cd sboard
 python agent/watcher.py sessions/my-session/
 ```
 
+## Integrations
+
+Each integration is a thin adapter that writes into the session transcript as if it were a participant. The agent sees the enriched context and can respond across sources.
+
+### Slack
+
+- **Ingest** — a Slack bot joins a channel and mirrors messages into `transcript.md` with author + timestamp
+- **Eject** — AI responses can be optionally posted back to the thread as a bot reply
+- **Trigger** — `@sboard` mention in Slack forces an immediate injection; otherwise the agent decides autonomously
+
+```toml
+[integrations.slack]
+enabled = true
+bot_token = "xoxb-..."       # or $SLACK_BOT_TOKEN
+channels = ["#incidents", "#eng-standup"]
+post_responses = false       # set true to send AI replies back to Slack
+```
+
+### Jira
+
+- **Pull** — linked Jira tickets are fetched and prepended to `context.md` when a session starts (or on demand)
+- **Watch** — ticket status changes (transition, comment, assignee) are streamed into the transcript so the AI can surface blockers mid-session
+- **Write** — the agent can append a comment to a ticket with a summary of the session's conclusions (requires explicit `--write-back` flag)
+
+```toml
+[integrations.jira]
+enabled = true
+base_url = "https://your-org.atlassian.net"
+api_token = "..."            # or $JIRA_API_TOKEN
+projects = ["OPS", "INFRA"]
+watch_transitions = true
+write_back = false
+```
+
+### PagerDuty
+
+- **Incident feed** — open incidents are injected as structured context at session start; useful for on-call handoffs
+- **Timeline sync** — PagerDuty alert events (trigger, ack, resolve) are appended to the transcript in real time so the AI has full incident history
+- **Postmortem seed** — after an incident resolves, the session transcript is formatted and attached to the PagerDuty incident as a postmortem draft
+
+```toml
+[integrations.pagerduty]
+enabled = true
+api_key = "..."              # or $PD_API_KEY
+services = ["P1ABC23"]
+postmortem_on_resolve = true
+```
+
+### Adding your own
+
+Integrations implement a two-method interface:
+
+```python
+class Adapter:
+    def stream(self) -> Iterator[TranscriptEntry]:
+        """Yield new entries as they arrive from the external system."""
+
+    def write_back(self, entry: TranscriptEntry) -> None:
+        """Optional: push a response back to the external system."""
+```
+
+Drop a file in `agent/integrations/` and add a `[integrations.<name>]` block in `config.toml`.
+
 ## Roadmap
 
 - [ ] Multi-user transcript merge (operational transform on markdown)
 - [ ] Web UI (read-only view of the live session)
 - [ ] Plugin API for custom injectors (SQL explainer, code reviewer, diagram generator)
 - [ ] Vector index over archived sessions for long-range retrieval
+- [ ] GitHub integration — PR diffs and CI failures as session context
+- [ ] Confluence / Notion — pull relevant docs into context automatically
 
 ## License
 
