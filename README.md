@@ -47,6 +47,69 @@ cd sboard
 python agent/watcher.py sessions/my-session/
 ```
 
+## End-to-end: incident response
+
+**1. Alert fires**
+
+PagerDuty triggers. sboard creates a new session directory automatically:
+`sessions/2026-06-17-14:32-incident-P1ABC23/`. It pre-populates `context.md`
+with the incident title, severity, affected services, and any runbooks linked
+to that service.
+
+**2. Slack channel opens**
+
+The on-call creates `#incident-2026-06-17-api-down` (or PagerDuty creates it).
+The sboard bot joins. Every message, code snippet, and log paste from this
+point streams into `transcript.md`.
+
+**3. Huddle starts**
+
+Five people join the voice call. Whisper (on-prem) transcribes audio and
+appends to the same `transcript.md`, speaker-labeled. Voice and Slack are now
+one unified timeline.
+
+**4. Agent watches in real time**
+
+As content arrives the agent scans continuously:
+
+- Stack trace pasted - agent finds the file and line in the codebase, notes the
+  last commit that touched it and the PR description
+- "Check the database latency" said out loud - flagged as an open question in
+  `open_items.md`
+- SQL or bash snippet pasted - agent explains it and notes which tables or
+  services it touches
+- "This started around 14:15" - agent scans PagerDuty timeline and recent Slack
+  history for anything that changed near that time
+
+All annotations are appended to `ai_responses.md` with timestamps, visible to
+anyone watching the session.
+
+**5. Participants interact via Slack as normal**
+
+Paste a log snippet, a config value, a URL - the agent cross-references it.
+No slash commands. No new tool to open. No change to how the team works.
+
+**6. Resolution**
+
+On-call resolves the PagerDuty incident. sboard detects this and generates
+`postmortem_draft.md`:
+
+- Full timeline reconstructed from the merged transcript
+- Root cause candidates ranked by frequency of mention and agent corroboration
+- Open items that were raised but never answered
+- Every code snippet annotated with its source
+- Action items extracted from phrases like "we should", "someone needs to"
+
+The draft is attached to the PagerDuty incident automatically.
+
+**7. Archive**
+
+Session is compressed after N days. The index stays searchable - next time the
+same service pages, sboard surfaces: *"similar incident 6 weeks ago, root cause
+was connection pool exhaustion, resolved by restarting the worker pool"*.
+
+---
+
 ## Integrations
 
 Each integration is a thin adapter that writes into the session transcript as if it were a participant. The agent sees the enriched context and can respond across sources.
