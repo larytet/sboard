@@ -300,7 +300,17 @@ Drop a file in `agent/integrations/` and add a `[integrations.<name>]` block in 
 
 ## Related projects
 
-Plain-text and local-file knowledge systems that share the same storage philosophy as sboard:
+### Incident response and AI SRE
+
+- [incident.io](https://incident.io) - Slack-native incident management, auto-captures timeline from messages/Zoom/alerts, generates postmortems on resolve. AI SRE does autonomous investigation and fix PR generation. SaaS only.
+- [Rootly](https://rootly.com) - AI-first incident platform: log analysis, runbook suggestions, automated RCA summaries. Most customizable of the SaaS tools. $20/user/month.
+- [Harness](https://harness.io) - builds a Software Delivery Knowledge Graph mapping code changes to deployments to incidents; listens to live Slack/Teams/Zoom and connects human signals to deployment changes. Closest to the ambient listener concept among commercial tools.
+- [FireHydrant](https://firehydrant.com) - acquired by Freshworks (Dec 2025). AI covers transcription and retrospectives; less autonomous than incident.io or Rootly.
+- [Aurora by Arvo AI](https://www.arvoai.ca) - Apache 2.0, fully self-hosted, LangGraph-orchestrated agents that autonomously query AWS/Azure/GCP/k8s for RCA. Works with any LLM. Closest open-source match to sboard's on-prem design.
+- [Coroot](https://coroot.com) - open source APM with AI-powered RCA, combines metrics/logs/traces/profiling. Self-hosted. Covers observability but not the conversation layer.
+- [Komodor Klaudia](https://komodor.com) - named in 2026 Gartner Market Guide for AI SRE Tooling; 50+ specialized agents for Kubernetes incident analysis.
+
+### Plain-text and local-file knowledge systems
 
 - [DokuWiki](https://www.dokuwiki.org) - the classic (2004). PHP wiki on flat `.txt` files, no database, still actively maintained. The reference point for filesystem-native team wikis.
 - [Obsidian](https://obsidian.md) - local vault of `.md` files, rich linking, no cloud required. Proprietary but free for personal use.
